@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能学习助手</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh; /* 改为90vh而非固定高度 */
+            min-height: 600px; /* 添加最小高度 */
+        }
+        
+        header {
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            padding: 15px 30px;
+            flex-shrink: 0; /* 防止头部被压缩 */
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo i {
+            font-size: 2.2rem;
+            color: #6cff8b;
+        }
+        
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .tagline {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1; /* 关键：允许主内容区域伸缩 */
+            overflow: hidden;
+            min-height: 0; /* 关键：解决flex布局中的最小高度问题 */
+        }
+        
+        .chat-container {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            border-right: 1px solid #eee;
+            min-height: 0; /* 关键：解决flex布局中的最小高度问题 */
+        }
+        
+        .chat-area {
+            flex: 1; /* 关键：占满可用空间 */
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 200px; /* 确保有最小高度 */
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            line-height: 1.5;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background-color: #007bff;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .assistant-message {
+            align-self: flex-start;
+            background-color: white;
+            color: #333;
+            border: 1px solid #ddd;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+        
+        .user-message .message-header {
+            color: rgba(255, 255, 255, 0.9);
+            justify-content: flex-end;
+        }
+        
+        .assistant-message .message-header {
+            color: #666;
+        }
+        
+        .message-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        
+        .user-message .message-icon {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .assistant-message .message-icon {
+            background-color: #4b6cb7;
+            color: white;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0; /* 防止输入区域被压缩 */
+            margin-top: 10px;
+        }
+        
+        #user-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 50px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        #user-input:focus {
+            border-color: #4b6cb7;
+        }
+        
+        #send-button {
+            background-color: #4b6cb7;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: background-color 0.3s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #send-button:hover {
+            background-color: #3a5999;
+            transform: scale(1.05);
+        }
+        
+        .sidebar {
+            flex: 1;
+            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto; /* 侧边栏也可以滚动 */
+            min-width: 280px; /* 确保侧边栏有最小宽度 */
+        }
+        
+        .assistant-info {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .assistant-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+        }
+        
+        .assistant-info h3 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .assistant-info p {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .stats {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+        }
+        
+        .stats h3 {
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #eee;
+            font-size: 0.9rem;
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .stat-label {
+            color: #666;
+        }
+        
+        .stat-value {
+            font-weight: 700;
+            color: #4b6cb7;
+        }
+        
+        .topic-selector {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+        }
+        
+        .topic-selector h3 {
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .topics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .topic {
+            padding: 6px 12px;
+            background-color: #f0f2f5;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .topic:hover {
+            background-color: #e4e6e9;
+        }
+        
+        .topic.active {
+            background-color: #4b6cb7;
+            color: white;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            gap: 10px;
+        }
+        
+        .control-button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            flex: 1;
+            justify-content: center;
+        }
+        
+        #clear-button {
+            background-color: #f8f9fa;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+        
+        #clear-button:hover {
+            background-color: #e9ecef;
+        }
+        
+        #hint-button {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        #hint-button:hover {
+            background-color: #218838;
+        }
+        
+        .footer {
+            padding: 10px 30px;
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+            border-top: 1px solid #eee;
+            background-color: #f8f9fa;
+            flex-shrink: 0; /* 防止页脚被压缩 */
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .chat-container {
+                border-right: none;
+                border-bottom: 1px solid #eee;
+            }
+            
+            .sidebar {
+                flex-direction: row;
+                flex-wrap: wrap;
+                overflow-y: visible;
+            }
+            
+            .assistant-info, .stats, .topic-selector {
+                flex: 1;
+                min-width: 250px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                height: 95vh;
+                min-height: 500px;
+            }
+            
+            header {
+                padding: 12px 15px;
+            }
+            
+            .logo h1 {
+                font-size: 1.5rem;
+            }
+            
+            .tagline {
+                font-size: 0.85rem;
+            }
+            
+            .chat-container {
+                padding: 10px;
+            }
+            
+            .chat-area {
+                padding: 10px;
+                gap: 10px;
+            }
+            
+            .message {
+                max-width: 90%;
+                padding: 10px 15px;
+            }
+            
+            .sidebar {
+                padding: 15px;
+                gap: 15px;
+            }
+        }
+        
+        /* 自定义滚动条 */
+        .chat-area::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .chat-area::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .chat-area::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        
+        .chat-area::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+                <div>
+                    <h1>智能学习助手</h1>
+                    <div class="tagline">您的个性化学习伙伴，陪伴您的成长之路</div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="chat-container">
+                <div class="chat-area" id="chat-area">
+                    <!-- 对话消息将在这里显示 -->
+                    <div class="message assistant-message">
+                        <div class="message-header">
+                            <div class="message-icon"><i class="fas fa-robot"></i></div>
+                            <div class="message-sender">学习助手</div>
+                            <div class="message-time">刚刚</div>
+                        </div>
+                        <div class="message-content">
+                            您好！我是您的智能学习助手。我可以帮助您解答学习问题、制定学习计划、提供学习建议等。请选择您感兴趣的学习主题，或者直接向我提问吧！
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-area">
+                    <input type="text" id="user-input" placeholder="输入您的问题或选择学习主题开始对话..." autocomplete="off">
+                    <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="assistant-info">
+                    <div class="assistant-avatar">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3>智能学习助手</h3>
+                    <p>我可以帮助您解答学习问题，提供学习建议，制定学习计划，并跟踪您的学习进度。</p>
+                </div>
+                
+                <div class="stats">
+                    <h3><i class="fas fa-chart-line"></i> 学习统计</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">对话轮次</span>
+                        <span class="stat-value" id="conversation-count">1</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">学习主题</span>
+                        <span class="stat-value" id="current-topic">通用学习</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">今日互动</span>
+                        <span class="stat-value">12分钟</span>
+                    </div>
+                </div>
+                
+                <div class="topic-selector">
+                    <h3><i class="fas fa-book-open"></i> 学习主题</h3>
+                    <div class="topics">
+                        <div class="topic active" data-topic="general">通用学习</div>
+                        <div class="topic" data-topic="math">数学</div>
+                        <div class="topic" data-topic="science">科学</div>
+                        <div class="topic" data-topic="language">语言学习</div>
+                        <div class="topic" data-topic="programming">编程</div>
+                        <div class="topic" data-topic="history">历史</div>
+                        <div class="topic" data-topic="exam">考试准备</div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button class="control-button" id="clear-button">
+                            <i class="fas fa-eraser"></i> 清空对话
+                        </button>
+                        <button class="control-button" id="hint-button">
+                            <i class="fas fa-lightbulb"></i> 获取提示
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>智能学习助手 &copy; 2023 | 设计用于教育目的 | 对话次数: <span id="total-conversation-count">1</span></p>
+        </div>
+    </div>
+
+    <script>
+        // 初始化变量
+        let conversationCount = 1;
+        let currentTopic = 'general';
+        let totalConversationCount = 1;
+        
+        // 主题对应的回答库
+        const responses = {
+            general: [
+                "学习是一个循序渐进的过程，建议每天保持固定的学习时间。",
+                "遇到困难时，不要灰心，可以尝试换个角度思考问题。",
+                "制定学习计划并坚持执行是提高学习效率的关键。",
+                "定期复习学过的知识可以巩固记忆，避免遗忘。",
+                "合理分配学习、休息和娱乐时间，保持身心健康。",
+                "与他人讨论学习内容可以帮助你更好地理解和记忆知识。",
+                "尝试将新知识与已有知识联系起来，构建知识网络。",
+                "保持好奇心，对学习内容保持兴趣是持续学习的动力。"
+            ],
+            math: [
+                "数学学习需要理解概念而不仅仅是记忆公式。",
+                "解决数学问题时要仔细审题，明确已知条件和求解目标。",
+                "练习是提高数学能力的关键，多做不同类型的题目。",
+                "建立错题本，定期回顾错误，避免重复犯错。",
+                "数学思维可以通过解决实际问题来培养。",
+                "尝试用不同的方法解决同一个问题，这有助于深入理解。",
+                "几何问题中，画图可以帮助你更直观地理解问题。",
+                "代数学习中，理解变量的含义和关系非常重要。"
+            ],
+            science: [
+                "科学学习强调观察、实验和推理能力。",
+                "理解科学原理比记忆事实更重要。",
+                "进行实验时，要仔细记录数据并分析结果。",
+                "科学知识在不断更新，保持学习的开放性很重要。",
+                "将科学知识与日常生活联系起来，可以加深理解。",
+                "阅读科学史可以帮助你理解科学发现的过程。",
+                "科学学习中，提问是推动学习的重要动力。",
+                "尝试用科学原理解释自然现象，这可以巩固你的知识。"
+            ],
+            language: [
+                "语言学习需要持续的练习和沉浸式环境。",
+                "每天坚持听、说、读、写，全面提高语言能力。",
+                "不要害怕犯错，语言学习是一个试错的过程。",
+                "观看外语电影、听外语歌曲可以提高听力理解。",
+                "尝试用目标语言思考，这可以加速语言内化过程。",
+                "背诵经典句子和段落可以丰富你的表达方式。",
+                "与母语者交流是提高口语能力的有效方法。",
+                "阅读目标语言的书籍、文章可以扩展词汇量。"
+            ],
+            programming: [
+                "编程学习需要理论知识和实践相结合。",
+                "理解编程概念比记忆语法更重要。",
+                "从小项目开始，逐步构建更复杂的程序。",
+                "阅读优秀的代码可以学习到良好的编程风格。",
+                "调试代码时，要有耐心，学会分析错误信息。",
+                "学习数据结构和算法可以提高编程效率。",
+                "参与开源项目可以获得实际开发经验。",
+                "编程思维可以通过解决实际问题来培养。"
+            ],
+            history: [
+                "历史学习不仅仅是记忆日期和事件，更重要的是理解历史背景和影响。",
+                "将历史事件放在时间线中理解，有助于把握历史脉络。",
+                "比较不同历史时期和地区的相似与差异，可以深化理解。",
+                "历史学习中，批判性思维很重要，要学会分析历史资料。",
+                "参观历史遗址和博物馆可以让历史学习更加生动。",
+                "理解历史人物的动机和选择，可以帮助你理解历史进程。",
+                "将历史知识与当前事件联系起来，可以加深理解。",
+                "阅读原始历史文献可以获得第一手的历史资料。"
+            ],
+            exam: [
+                "考试准备需要提前规划，不要临时抱佛脚。",
+                "理解考试要求和评分标准，有针对性地准备。",
+                "做模拟试题可以帮助你熟悉考试形式和时间限制。",
+                "复习时要突出重点，针对薄弱环节加强练习。",
+                "考试前保持充足的睡眠，保持良好的身心状态。",
+                "时间管理是考试成功的关键，练习合理分配时间。",
+                "考试中遇到难题时，不要慌张，先做会的题目。",
+                "考试后要分析错题，总结经验教训。"
+            ]
+        };
+        
+        // 学习助手开场问题
+        const assistantQuestions = [
+            "您今天想学习什么内容？",
+            "您在学习中遇到了什么困难？",
+            "您希望我帮您制定学习计划吗？",
+            "您对哪个学习主题最感兴趣？",
+            "您希望以什么方式进行学习？",
+            "您最近在学习什么新知识？",
+            "您有什么具体的学习目标吗？",
+            "您觉得自己的学习方法有效吗？"
+        ];
+        
+        // DOM 元素
+        const chatArea = document.getElementById('chat-area');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const conversationCountElement = document.getElementById('conversation-count');
+        const currentTopicElement = document.getElementById('current-topic');
+        const totalConversationCountElement = document.getElementById('total-conversation-count');
+        const topics = document.querySelectorAll('.topic');
+        const clearButton = document.getElementById('clear-button');
+        const hintButton = document.getElementById('hint-button');
+        
+        // 添加消息到聊天区域
+        function addMessage(content, sender, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+            
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false
+            });
+            
+            const senderName = isUser ? '您' : '学习助手';
+            const senderIcon = isUser ? 'fas fa-user' : 'fas fa-robot';
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <div class="message-icon"><i class="${senderIcon}"></i></div>
+                    <div class="message-sender">${senderName}</div>
+                    <div class="message-time">${timeString}</div>
+                </div>
+                <div class="message-content">${content}</div>
+            `;
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            // 更新对话计数
+            if (isUser) {
+                conversationCount++;
+                totalConversationCount++;
+                conversationCountElement.textContent = conversationCount;
+                totalConversationCountElement.textContent = totalConversationCount;
+                
+                // 测试：添加多条消息以展示滚动功能
+                if (conversationCount === 3) {
+                    setTimeout(() => {
+                        addMessage("您已经和我进行了3次对话！我可以看到我们的对话区域现在可以正常滚动了。继续提问吧！", 'assistant', false);
+                    }, 500);
+                }
+                
+                // 当对话次数达到10时，给出特别提醒
+                if (conversationCount === 10) {
+                    setTimeout(() => {
+                        addMessage("🎉 恭喜！您已经和我完成了10次对话！我们的对话区域仍然可以正常滚动查看所有历史消息。", 'assistant', false);
+                    }, 500);
+                }
+            }
+        }
+        
+        // 获取助手回答
+        function getAssistantResponse(userMessage) {
+            // 检查是否有特定关键词
+            const lowerMsg = userMessage.toLowerCase();
+            
+            // 问候语
+            if (lowerMsg.includes('你好') || lowerMsg.includes('您好') || lowerMsg.includes('hi') || lowerMsg.includes('hello')) {
+                return `您好！很高兴为您提供学习帮助。您已经和我进行了 ${conversationCount} 次对话。今天想学习什么内容呢？`;
+            }
+            
+            // 感谢
+            if (lowerMsg.includes('谢谢') || lowerMsg.includes('感谢')) {
+                return `不客气！继续努力，您一定会取得进步。还需要我帮助什么吗？`;
+            }
+            
+            // 学习计划
+            if (lowerMsg.includes('计划') || lowerMsg.includes('规划') || lowerMsg.includes('安排')) {
+                return `制定学习计划时，建议：<br>1. 设定明确的学习目标<br>2. 将大目标分解为小任务<br>3. 合理安排时间，留出休息间隙<br>4. 定期检查进度并调整计划<br>您想为哪个学科制定计划？`;
+            }
+            
+            // 学习困难
+            if (lowerMsg.includes('困难') || lowerMsg.includes('难题') || lowerMsg.includes('不懂') || lowerMsg.includes('不会')) {
+                return `遇到学习困难时，可以尝试：<br>1. 回顾基础知识<br>2. 寻找类似例题<br>3. 向老师或同学请教<br>4. 休息一下，换个角度思考<br>您具体在哪个问题上遇到了困难？`;
+            }
+            
+            // 测试滚动功能
+            if (lowerMsg.includes('测试') || lowerMsg.includes('滚动')) {
+                let longMessage = "这是一个长消息，用于测试对话框的滚动功能。<br><br>";
+                for (let i = 1; i <= 10; i++) {
+                    longMessage += `这是第${i}行测试文本，用于填充内容以展示滚动功能。当内容超过对话框高度时，右侧会出现滚动条。`;
+                    if (i < 10) longMessage += "<br><br>";
+                }
+                return longMessage;
+            }
+            
+            // 从当前主题的回答库中随机选择回答
+            const topicResponses = responses[currentTopic];
+            const randomResponse = topicResponses[Math.floor(Math.random() * topicResponses.length)];
+            
+            // 随机添加一个问题以继续对话
+            const randomQuestion = assistantQuestions[Math.floor(Math.random() * assistantQuestions.length)];
+            
+            // 每三次对话改变一次问题风格
+            if (conversationCount % 3 === 0) {
+                return `${randomResponse}<br><br>${randomQuestion}`;
+            }
+            
+            return randomResponse;
+        }
+        
+        // 处理用户发送消息
+        function handleUserMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // 添加用户消息
+            addMessage(message, 'user', true);
+            
+            // 清空输入框
+            userInput.value = '';
+            
+            // 模拟助手思考时间
+            setTimeout(() => {
+                const response = getAssistantResponse(message);
+                addMessage(response, 'assistant', false);
+            }, 800);
+        }
+        
+        // 发送按钮点击事件
+        sendButton.addEventListener('click', handleUserMessage);
+        
+        // 输入框回车事件
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleUserMessage();
+            }
+        });
+        
+        // 主题选择事件
+        topics.forEach(topic => {
+            topic.addEventListener('click', () => {
+                // 移除所有主题的active类
+                topics.forEach(t => t.classList.remove('active'));
+                
+                // 为当前主题添加active类
+                topic.classList.add('active');
+                
+                // 更新当前主题
+                currentTopic = topic.getAttribute('data-topic');
+                currentTopicElement.textContent = getTopicName(currentTopic);
+                
+                // 添加助手消息，说明主题已切换
+                const topicName = getTopicName(currentTopic);
+                addMessage(`已切换到${topicName}主题。我可以帮您解答关于${topicName}的问题。您有什么想了解的吗？`, 'assistant', false);
+            });
+        });
+        
+        // 获取主题名称
+        function getTopicName(topicKey) {
+            const topicNames = {
+                'general': '通用学习',
+                'math': '数学',
+                'science': '科学',
+                'language': '语言学习',
+                'programming': '编程',
+                'history': '历史',
+                'exam': '考试准备'
+            };
+            return topicNames[topicKey] || '通用学习';
+        }
+        
+        // 清空对话
+        clearButton.addEventListener('click', () => {
+            if (confirm('确定要清空对话吗？对话统计将重置。')) {
+                // 清空聊天区域
+                chatArea.innerHTML = '';
+                
+                // 重置对话计数
+                conversationCount = 1;
+                conversationCountElement.textContent = conversationCount;
+                
+                // 添加助手初始消息
+                addMessage('对话已重置。您好！我是您的智能学习助手。我可以帮助您解答学习问题、制定学习计划、提供学习建议等。请选择您感兴趣的学习主题，或者直接向我提问吧！', 'assistant', false);
+            }
+        });
+        
+        // 获取提示
+        hintButton.addEventListener('click', () => {
+            const hints = [
+                "尝试向我提问具体的学习问题，我会给出详细解答。",
+                "切换不同学习主题，我可以提供针对性的建议。",
+                "告诉我您的学习目标，我可以帮您制定计划。",
+                "如果您遇到学习困难，我可以提供解决方法。",
+                "定期复习是巩固知识的关键，我可以提醒您复习计划。",
+                "学习需要劳逸结合，合理安排休息时间也很重要。",
+                "输入'测试'或'滚动'可以查看长消息的滚动效果。"
+            ];
+            
+            const randomHint = hints[Math.floor(Math.random() * hints.length)];
+            addMessage(`💡 提示：${randomHint}`, 'assistant', false);
+        });
+        
+        // 初始提示
+        setTimeout(() => {
+            addMessage("💡 提示：您可以点击右侧的学习主题切换对话方向，或直接向我提问任何学习相关问题。输入'测试'可以查看滚动功能。", 'assistant', false);
+        }, 2000);
+    </script>
+</body>
+</html>
