@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习助手智能体</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #4a6fa5, #3a86ff);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .conversation-counter {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+        }
+        
+        .chat-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 15px;
+            border-radius: 15px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background-color: #e3f2fd;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .assistant-message {
+            background-color: #f8f9fa;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .user-message .message-header {
+            color: #1565c0;
+        }
+        
+        .assistant-message .message-header {
+            color: #d81b60;
+        }
+        
+        .message-header i {
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            background-color: #f8f9fa;
+            display: flex;
+            gap: 10px;
+        }
+        
+        input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            border-color: #3a86ff;
+        }
+        
+        button {
+            background: linear-gradient(90deg, #3a86ff, #4a6fa5);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(58, 134, 255, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .topics {
+            padding: 15px 20px;
+            background-color: #f0f7ff;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .topic-btn {
+            background-color: #e3f2fd;
+            border: 2px solid #bbdefb;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .topic-btn:hover {
+            background-color: #bbdefb;
+            transform: translateY(-2px);
+        }
+        
+        .conversation-info {
+            padding: 10px 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .reset-btn {
+            background: linear-gradient(90deg, #ff6b6b, #ff8e8e);
+            padding: 5px 15px;
+            font-size: 0.8rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+            background-color: #f8f9fa;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 10px;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-content {
+                height: 65vh;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+            
+            .topics {
+                justify-content: center;
+            }
+        }
+        
+        .typing-indicator {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            border-bottom-left-radius: 5px;
+            align-self: flex-start;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background-color: #999;
+            border-radius: 50%;
+            animation: typing 1.5s infinite ease-in-out;
+        }
+        
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> 学习助手智能体</h1>
+            <p>您的个人学习伙伴，随时为您解答学习问题</p>
+            <div class="conversation-counter">对话轮次: <span id="counter">0</span>/10+</div>
+        </header>
+        
+        <div class="conversation-info">
+            <div>已进行 <span id="conversation-count">0</span> 次对话</div>
+            <button class="reset-btn" id="reset-btn"><i class="fas fa-redo"></i> 重新开始</button>
+        </div>
+        
+        <div class="topics">
+            <div class="topic-btn" data-topic="数学">数学问题</div>
+            <div class="topic-btn" data-topic="英语">英语学习</div>
+            <div class="topic-btn" data-topic="编程">编程指导</div>
+            <div class="topic-btn" data-topic="科学">科学知识</div>
+            <div class="topic-btn" data-topic="历史">历史探讨</div>
+            <div class="topic-btn" data-topic="学习建议">学习建议</div>
+        </div>
+        
+        <div class="main-content">
+            <div class="chat-container" id="chat-container">
+                <!-- 初始欢迎消息 -->
+                <div class="message assistant-message">
+                    <div class="message-header">
+                        <i class="fas fa-robot"></i> 学习助手
+                    </div>
+                    <div class="message-content">
+                        您好！我是您的学习助手智能体。我可以帮助您解答学习问题、提供学习建议、解释概念等。我已经准备好与您进行至少10次对话！请选择上方的话题或直接输入您的问题。
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <input type="text" id="user-input" placeholder="输入您的问题或消息... (例如：如何提高学习效率？)" autocomplete="off">
+                <button id="send-btn"><i class="fas fa-paper-plane"></i> 发送</button>
+            </div>
+        </div>
+        
+        <footer>
+            <p>学习助手智能体 &copy; 2023 | 设计目标：确保至少10次有意义的对话</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const chatContainer = document.getElementById('chat-container');
+            const userInput = document.getElementById('user-input');
+            const sendBtn = document.getElementById('send-btn');
+            const counter = document.getElementById('counter');
+            const conversationCount = document.getElementById('conversation-count');
+            const resetBtn = document.getElementById('reset-btn');
+            const topicBtns = document.querySelectorAll('.topic-btn');
+            
+            // 对话状态
+            let conversationHistory = [];
+            let messageCount = 0;
+            let conversationTurn = 0;
+            
+            // 学习助手的知识库
+            const knowledgeBase = {
+                "数学": [
+                    "数学是研究数量、结构、变化以及空间等概念的学科。",
+                    "勾股定理指出：直角三角形的两条直角边的平方和等于斜边的平方。",
+                    "微积分是研究变化率和累积量的数学分支，由牛顿和莱布尼茨独立发现。",
+                    "二次方程的一般形式是 ax² + bx + c = 0，其解可以用公式 x = [-b ± √(b² - 4ac)] / 2a 求得。",
+                    "圆周率π是一个数学常数，约等于3.14159，表示圆的周长与直径的比值。",
+                    "概率论是研究随机现象数量规律的数学分支，广泛应用于统计学和数据分析。"
+                ],
+                "英语": [
+                    "英语学习需要多读、多听、多说、多写，持之以恒才能取得进步。",
+                    "英语中有12种时态，包括一般现在时、现在进行时、一般过去时等。",
+                    "英语词汇量是阅读理解的关键，建议每天学习5-10个新单词。",
+                    "英语发音中，注意元音的长短音和重音位置，这对口语表达非常重要。",
+                    "多看英语电影、听英语歌曲可以提高听力理解能力和语感。",
+                    "英语写作需要注意句子结构、时态一致和逻辑连贯性。"
+                ],
+                "编程": [
+                    "编程是使用编程语言创建计算机程序的过程。",
+                    "Python是一种流行的高级编程语言，以其简洁易读的语法而闻名。",
+                    "算法是解决问题的一系列明确指令，是编程的核心。",
+                    "调试是查找和修复程序错误的过程，是编程的重要技能。",
+                    "版本控制系统如Git可以帮助开发者管理代码变更和协作开发。",
+                    "面向对象编程是一种编程范式，基于对象和类的概念。"
+                ],
+                "科学": [
+                    "科学是通过观察和实验来研究自然现象的系统方法。",
+                    "牛顿三大定律是经典力学的基础，描述了物体运动的基本规律。",
+                    "光合作用是植物将光能转化为化学能的过程，产生氧气和葡萄糖。",
+                    "元素周期表将所有已知化学元素按照原子序数排列，揭示了元素性质的周期性规律。",
+                    "DNA是遗传物质，携带生物体的遗传信息。",
+                    "能量守恒定律指出：能量不能创造也不能消灭，只能从一种形式转化为另一种形式。"
+                ],
+                "历史": [
+                    "历史是研究过去事件及其对人类社会发展影响的学科。",
+                    "中国有着五千年的文明史，是世界四大文明古国之一。",
+                    "工业革命是18世纪从英国开始的技术、经济和社会变革，彻底改变了生产方式。",
+                    "第二次世界大战是20世纪规模最大的全球性冲突，对世界格局产生了深远影响。",
+                    "文艺复兴是14-17世纪欧洲的文化运动，促进了艺术、科学和思想的繁荣发展。",
+                    "丝绸之路是古代连接东西方的贸易路线，促进了文化和技术交流。"
+                ],
+                "学习建议": [
+                    "制定明确的学习目标和计划，有助于提高学习效率。",
+                    "番茄工作法是一种时间管理技巧：工作25分钟，休息5分钟。",
+                    "主动回忆是有效的学习策略：尝试回忆所学内容，而不是被动重复阅读。",
+                    "分散学习比集中学习更有效：将学习时间分散在多个短时段中。",
+                    "教授他人是巩固知识的好方法，可以加深对概念的理解。",
+                    "保持充足的睡眠对记忆巩固和学习效果至关重要。"
+                ],
+                "通用": [
+                    "这是一个很好的问题！让我详细解释一下...",
+                    "我理解您的疑问，这个问题可以从几个方面来理解...",
+                    "根据我的知识库，我可以为您提供以下信息...",
+                    "这是一个常见的学习问题，许多学生都曾遇到过。",
+                    "很高兴您提出这个问题，它有助于深化对这个主题的理解。",
+                    "让我们进一步探讨这个主题，以便您获得更全面的理解。"
+                ],
+                "问候": [
+                    "您好！很高兴为您提供学习帮助。",
+                    "欢迎回来！让我们继续学习之旅吧。",
+                    "很高兴见到您！今天想学习什么主题呢？"
+                ],
+                "结束": [
+                    "希望这些信息对您有帮助！如果您有其他问题，请随时问我。",
+                    "我们已经完成了10次以上的对话！您真是一个积极的学习者。",
+                    "我们的对话已经达到了目标次数，但如果您还有问题，我随时为您解答。"
+                ]
+            };
+            
+            // 初始化对话
+            function initConversation() {
+                conversationHistory = [];
+                messageCount = 0;
+                conversationTurn = 0;
+                counter.textContent = "0";
+                conversationCount.textContent = "0";
+                
+                // 清空聊天容器，只保留初始消息
+                chatContainer.innerHTML = `
+                    <div class="message assistant-message">
+                        <div class="message-header">
+                            <i class="fas fa-robot"></i> 学习助手
+                        </div>
+                        <div class="message-content">
+                            您好！我是您的学习助手智能体。我可以帮助您解答学习问题、提供学习建议、解释概念等。我已经准备好与您进行至少10次对话！请选择上方的话题或直接输入您的问题。
+                        </div>
+                    </div>
+                `;
+                
+                // 添加第一条助手消息
+                addMessage("assistant", "让我们开始学习之旅吧！您有什么学习问题或想了解的主题吗？");
+            }
+            
+            // 添加消息到聊天
+            function addMessage(sender, content) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                
+                const senderName = sender === 'user' ? '您' : '学习助手';
+                const icon = sender === 'user' ? 'fas fa-user' : 'fas fa-robot';
+                
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <i class="${icon}"></i> ${senderName}
+                    </div>
+                    <div class="message-content">
+                        ${content}
+                    </div>
+                `;
+                
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+                // 更新对话历史
+                conversationHistory.push({
+                    sender: sender,
+                    content: content,
+                    timestamp: new Date().toLocaleTimeString()
+                });
+                
+                // 更新消息计数
+                if (sender === 'user') {
+                    messageCount++;
+                    counter.textContent = messageCount;
+                    
+                    // 每两次用户消息算一轮对话
+                    if (messageCount % 2 === 0) {
+                        conversationTurn++;
+                        conversationCount.textContent = conversationTurn;
+                    }
+                }
+            }
+            
+            // 显示输入指示器
+            function showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'typing-indicator';
+                typingDiv.id = 'typing-indicator';
+                typingDiv.innerHTML = `
+                    <div class="message-header">
+                        <i class="fas fa-robot"></i> 学习助手
+                    </div>
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                `;
+                
+                chatContainer.appendChild(typingDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+                return typingDiv;
+            }
+            
+            // 生成助手响应
+            function generateResponse(userMessage) {
+                // 检测消息类型并选择合适的响应
+                let response = "";
+                let topic = "";
+                
+                // 检查是否为问候
+                if (userMessage.includes("你好") || userMessage.includes("您好") || 
+                    userMessage.includes("嗨") || userMessage.includes("hello") || 
+                    userMessage.includes("hi")) {
+                    const greetings = knowledgeBase["问候"];
+                    response = greetings[Math.floor(Math.random() * greetings.length)];
+                }
+                // 检查是否包含特定主题
+                else {
+                    // 确定主题
+                    const topics = Object.keys(knowledgeBase);
+                    for (const t of topics) {
+                        if (userMessage.includes(t) && t !== "通用" && t !== "问候" && t !== "结束") {
+                            topic = t;
+                            break;
+                        }
+                    }
+                    
+                    // 如果没有检测到特定主题，使用通用响应
+                    if (!topic) {
+                        topic = "通用";
+                    }
+                    
+                    // 从知识库中选择响应
+                    const possibleResponses = knowledgeBase[topic];
+                    response = possibleResponses[Math.floor(Math.random() * possibleResponses.length)];
+                    
+                    // 如果对话轮次达到10，添加结束语
+                    if (conversationTurn >= 10) {
+                        const endings = knowledgeBase["结束"];
+                        response += " " + endings[Math.floor(Math.random() * endings.length)];
+                    }
+                }
+                
+                return response;
+            }
+            
+            // 处理用户发送消息
+            function handleUserMessage() {
+                const message = userInput.value.trim();
+                
+                if (message === "") {
+                    return;
+                }
+                
+                // 添加用户消息
+                addMessage("user", message);
+                
+                // 清空输入框
+                userInput.value = "";
+                
+                // 显示输入指示器
+                const typingIndicator = showTypingIndicator();
+                
+                // 模拟助手思考时间
+                setTimeout(() => {
+                    // 移除输入指示器
+                    typingIndicator.remove();
+                    
+                    // 生成并添加助手响应
+                    const response = generateResponse(message);
+                    addMessage("assistant", response);
+                    
+                    // 如果对话轮次小于10，鼓励继续对话
+                    if (conversationTurn < 10) {
+                        setTimeout(() => {
+                            const encourageMessages = [
+                                "您还有什么其他问题吗？",
+                                "我们可以继续探讨这个主题，或者换一个主题。",
+                                "希望这个解释对您有帮助，您还有其他疑问吗？",
+                                "学习是一个持续的过程，让我们继续探索更多知识吧！"
+                            ];
+                            const encourageMsg = encourageMessages[Math.floor(Math.random() * encourageMessages.length)];
+                            
+                            const typingIndicator2 = showTypingIndicator();
+                            
+                            setTimeout(() => {
+                                typingIndicator2.remove();
+                                addMessage("assistant", encourageMsg);
+                            }, 800);
+                        }, 1000);
+                    }
+                }, 1000 + Math.random() * 1000);
+            }
+            
+            // 事件监听器
+            sendBtn.addEventListener('click', handleUserMessage);
+            
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleUserMessage();
+                }
+            });
+            
+            resetBtn.addEventListener('click', initConversation);
+            
+            // 主题按钮事件
+            topicBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const topic = this.getAttribute('data-topic');
+                    userInput.value = `我想了解关于${topic}的知识`;
+                    handleUserMessage();
+                });
+            });
+            
+            // 初始化对话
+            initConversation();
+            
+            // 添加一些示例对话，以展示至少10次对话
+            setTimeout(() => {
+                const exampleMessages = [
+                    "你好，学习助手！",
+                    "你能帮我解释一下勾股定理吗？",
+                    "编程入门应该学习什么语言？",
+                    "如何提高英语听力？",
+                    "什么是光合作用？",
+                    "工业革命对世界有什么影响？",
+                    "怎样制定有效的学习计划？",
+                    "数学中的微积分难学吗？",
+                    "科学方法的基本步骤是什么？",
+                    "中国历史上有哪些重要朝代？"
+                ];
+                
+                // 自动添加示例对话（仅用于演示）
+                let index = 0;
+                const addExampleMessage = () => {
+                    if (index < exampleMessages.length && conversationTurn < 10) {
+                        userInput.value = exampleMessages[index];
+                        handleUserMessage();
+                        index++;
+                        
+                        // 随机间隔时间添加下一条消息
+                        setTimeout(addExampleMessage, 3000 + Math.random() * 2000);
+                    }
+                };
+                
+                // 开始添加示例对话（注释掉这行可以禁用自动对话）
+                // setTimeout(addExampleMessage, 2000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
